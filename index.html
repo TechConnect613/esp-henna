@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SumUp OAuth2</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🔗 SumUp OAuth2</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -16,73 +16,127 @@
         }
         .container {
             background: white;
-            padding: 40px;
-            border-radius: 12px;
+            padding: 48px 40px;
+            border-radius: 16px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             text-align: center;
-            max-width: 400px;
+            max-width: 420px;
+            width: 100%;
         }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
+        h1 {
+            font-size: 28px;
+            margin: 0 0 8px 0;
+            color: #1a1a1a;
+        }
+        .subtitle {
+            color: #666;
+            margin: 0 0 32px 0;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .loading {
+            display: inline-block;
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+            border: 4px solid #e0e0e0;
+            border-top-color: #0066cc;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 8px 0;
         }
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
-        .success { color: #27ae60; }
-        .error { color: #e74c3c; }
+        .status {
+            color: #666;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .connect-btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+            width: 100%;
+        }
+        .connect-btn:hover {
+            background: #0055aa;
+        }
+        .error {
+            color: #dc2626;
+            font-size: 14px;
+            margin-top: 12px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔐 SumUp OAuth2</h1>
-        <div id="status">
-            <div class="spinner"></div>
-            <p>Processing...</p>
-        </div>
+    <div class="container" id="app">
+        <h1>🔗 SumUp OAuth2</h1>
+        <p class="subtitle">Connect your SumUp account to start accepting payments</p>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading"></div>
+        <p id="statusText" class="status">Loading...</p>
+
+        <!-- Connect Button (hidden by default) -->
+        <button id="connectBtn" class="connect-btn hidden">Connect with SumUp</button>
+
+        <!-- Error Message (hidden by default) -->
+        <p id="errorText" class="error hidden"></p>
     </div>
-    
+
     <script>
-        // Get the authorization code from URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const error = urlParams.get('error');
-        
-        const statusDiv = document.getElementById('status');
-        
-        if (error) {
-            statusDiv.innerHTML = `
-                <div class="error">❌ Authentication failed</div>
-                <p>Error: ${error}</p>
-                <p>Please try again in the app.</p>
-            `;
-        } else if (code) {
-            statusDiv.innerHTML = `
-                <div class="success">✅ Authentication successful!</div>
-                <p>Redirecting back to the app...</p>
-            `;
-            // Send the code back to your app
-            setTimeout(() => {
-                window.location.href = `com.kom://auth?code=${code}`;
-            }, 1000);
+        // ========== HARDCODED CREDENTIALS ==========
+        // These are from your ESP (2).json file
+        const clientId = 'cc_classic_Kz8jASUnLTKuNuWVOReMapxwdKQKQ';
+        const redirectUri = 'https://esp-henna.vercel.app/callback';
+        // ============================================
+
+        // Get DOM elements
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const statusText = document.getElementById('statusText');
+        const connectBtn = document.getElementById('connectBtn');
+        const errorText = document.getElementById('errorText');
+
+        console.log('🔑 Client ID:', clientId);
+        console.log('🔗 Redirect URI:', redirectUri);
+
+        // Check if credentials exist
+        if (clientId && clientId !== '' && redirectUri && redirectUri !== '') {
+            // Hide loading, show connect button
+            loadingSpinner.classList.add('hidden');
+            statusText.textContent = 'Ready to connect!';
+            connectBtn.classList.remove('hidden');
+
+            // Handle connect button click
+            connectBtn.addEventListener('click', function() {
+                // Build the SumUp OAuth URL
+                const authUrl = 'https://api.sumup.com/authorize?' +
+                    'client_id=' + encodeURIComponent(clientId) +
+                    '&redirect_uri=' + encodeURIComponent(redirectUri) +
+                    '&response_type=code' +
+                    '&scope=user.profile_readonly transactions.history payments';
+
+                console.log('🚀 Redirecting to:', authUrl);
+                window.location.href = authUrl;
+            });
+
         } else {
-            // Redirect to SumUp OAuth2
-            const clientId = 'YOUR_SUMUP_CLIENT_ID';
-            const redirectUri = 'https://YOUR_VERCEL_APP.vercel.app';
-            const scope = 'payments transactions offline_access';
-            
-            statusDiv.innerHTML = `
-                <div class="spinner"></div>
-                <p>Redirecting to SumUp...</p>
-            `;
-            
-            window.location.href = `https://api.sumup.com/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+            // Show error
+            loadingSpinner.classList.add('hidden');
+            statusText.textContent = '❌ Configuration Error';
+            errorText.textContent = 'Missing client ID or redirect URI. Please check your credentials.';
+            errorText.classList.remove('hidden');
+            console.error('❌ Missing credentials');
         }
     </script>
 </body>
