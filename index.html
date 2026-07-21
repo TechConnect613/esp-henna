@@ -21,18 +21,22 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             text-align: center;
             max-width: 400px;
+            width: 100%;
         }
         h1 {
             color: #1a1a1a;
             margin-bottom: 16px;
+            font-size: 28px;
         }
-        p {
+        .subtitle {
             color: #666;
-            margin-bottom: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
         }
         .status {
             font-size: 14px;
             color: #888;
+            margin-bottom: 16px;
         }
         .error {
             color: #d32f2f;
@@ -46,58 +50,106 @@
             background: #0066cc;
             color: white;
             border: none;
-            padding: 12px 32px;
+            padding: 14px 32px;
             border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
-            margin-top: 16px;
+            width: 100%;
+            margin-top: 8px;
         }
         .connect-btn:hover {
             background: #0055aa;
         }
+        .connect-btn:active {
+            transform: scale(0.98);
+        }
         .hidden {
             display: none;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #0066cc;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 12px 0;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .footer {
+            margin-top: 24px;
+            font-size: 12px;
+            color: #aaa;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔗 SumUp OAuth2</h1>
+        <p class="subtitle">Connect your SumUp account to start accepting payments</p>
+        
+        <!-- Loading State -->
+        <div id="loadingSpinner" class="loading-spinner"></div>
         <p id="status" class="status">Loading...</p>
+        
+        <!-- Connect Button (hidden by default) -->
         <button id="connectBtn" class="connect-btn hidden">Connect with SumUp</button>
+        
+        <p class="footer">ESP SumUp Integration</p>
     </div>
     
     <script>
         // ========== YOUR ACTUAL CREDENTIALS ==========
+        // Client ID from your ESP (2).json file
         const clientId = 'cc_classic_Kz8jASUnLTKuNuWVOReMapxwdKQKQ';
-        const redirectUri = 'https://esp-henna.vercel.app/callback';
+        
+        // Redirect URI - MUST match exactly what's in your SumUp OAuth app settings
+        const redirectUri = 'https://esp-henna-xi.vercel.app/callback';
         // ============================================
 
+        // Get DOM elements
+        const loadingSpinner = document.getElementById('loadingSpinner');
         const statusElement = document.getElementById('status');
         const connectBtn = document.getElementById('connectBtn');
 
+        // Log to console for debugging
         console.log('🔑 Client ID:', clientId);
         console.log('🔗 Redirect URI:', redirectUri);
 
+        // Check URL parameters for OAuth response
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
         
         if (error) {
+            // Show error state
+            loadingSpinner.classList.add('hidden');
             statusElement.innerHTML = `❌ Authorization Error: ${error}`;
-            statusElement.className = 'error';
+            statusElement.className = 'status error';
         } else if (code) {
+            // Success! We got an authorization code
+            loadingSpinner.classList.add('hidden');
             statusElement.innerHTML = '✅ Authentication successful!<br>You can close this window.';
-            statusElement.className = 'success';
+            statusElement.className = 'status success';
             console.log('✅ Authorization code received:', code);
+            
+            // Optional: Send code to your backend for token exchange
+            // fetch('/api/token', { method: 'POST', body: JSON.stringify({ code }) })
         } else {
-            // Show the connect button
+            // Ready to connect - show the button
+            loadingSpinner.classList.add('hidden');
             statusElement.textContent = 'Ready to connect!';
+            statusElement.className = 'status';
             connectBtn.classList.remove('hidden');
             
+            // Handle connect button click
             connectBtn.addEventListener('click', function() {
+                // Build the SumUp OAuth authorization URL
                 const authUrl = 'https://api.sumup.com/oauth2/authorize?' +
                     'response_type=code' +
                     '&client_id=' + encodeURIComponent(clientId) +
@@ -110,5 +162,4 @@
         }
     </script>
 </body>
-</html>"<!-- Trigger deployment with commit comments enabled -->" 
-"<!-- Force sync -->" 
+</html>
